@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  @apply bg-slate-50 font-[var(--font-geist-sans)] text-slate-900 antialiased;
+}
+
+@layer utilities {
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  }
+
+  .print-hidden {
+    @apply print:hidden;
+  }
+
+  /* Constrain printable area to A4 and center content */
+  .print-page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    background: white;
+  }
+
+  .print-watermark {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.06;
+    pointer-events: none;
+    z-index: 0;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 70%;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body {
+    background: white;
+  }
+
+  /* Print only the designated area */
+  body * {
+    visibility: hidden;
+  }
+
+  .print-page,
+  .print-page * {
+    visibility: visible;
+  }
+
+  .print-page {
+    padding: 0 !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+}

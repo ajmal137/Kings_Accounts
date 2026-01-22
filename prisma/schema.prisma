@@ -1,0 +1,179 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id            String             @id @default(cuid())
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  name          String
+  address       String
+  gstin         String?
+  contactPhone  String
+  contactEmail  String?
+  isRegistered  Boolean            @default(false)
+  consignments  ConsignmentNote[]
+  invoices      Invoice[]
+  ledgerEntries LedgerEntry[]
+
+  @@index([name])
+}
+
+model Vehicle {
+  id             String             @id @default(cuid())
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  vehicleNumber  String             @unique
+  description    String?
+  ownerName      String
+  isOwnedByFirm  Boolean            @default(false)
+  consignments   ConsignmentNote[]
+
+  @@index([vehicleNumber])
+}
+
+model ConsignmentNote {
+  id                     String       @id @default(cuid())
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  lrNumber               String       @unique
+  date                   DateTime
+  consignorName          String
+  consignorAddress       String
+  consignorGstin         String?
+  consigneeName          String
+  consigneeAddress       String
+  consigneeGstin         String?
+  customerId             String
+  vehicleId              String
+  fromLocation           String
+  toLocation             String
+  goodsDescription       String
+  numPackages            Int
+  weight                 Decimal
+  freightAmount          Decimal
+  paymentType            String
+  gstMode                String
+  ownerRiskOrCarrierRisk String
+  ewayBillNumber         String?
+  remarks                String?
+  linkedInvoices         Invoice[]
+  ledgerEntries          LedgerEntry[]
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id])
+
+  @@index([date])
+  @@index([customerId])
+  @@index([vehicleId])
+}
+
+model Invoice {
+  id                String        @id @default(cuid())
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  invoiceNumber     String        @unique
+  date              DateTime
+  invoiceType       String
+  customerId        String
+  consignmentNoteId String?
+  description       String
+  placeOfSupply     String?
+  basicAmount       Decimal
+  cgstRate          Decimal
+  sgstRate          Decimal
+  cgstAmount        Decimal
+  sgstAmount        Decimal
+  totalAmount       Decimal
+  gstPayableBy      String
+  notes             String?
+  ledgerEntries     LedgerEntry[]
+
+  customer        Customer        @relation(fields: [customerId], references: [id])
+  consignmentNote ConsignmentNote? @relation(fields: [consignmentNoteId], references: [id])
+
+  @@index([date])
+  @@index([invoiceType])
+}
+
+model Account {
+  id            String         @id @default(cuid())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  name          String
+  code          String         @unique
+  type          String
+  ledgerDebit   LedgerEntry[]  @relation("DebitAccount")
+  ledgerCredit  LedgerEntry[]  @relation("CreditAccount")
+
+  @@index([type])
+}
+
+model LedgerEntry {
+  id                  String         @id @default(cuid())
+  date                DateTime       @default(now())
+  description         String
+  amount              Decimal
+  debitAccountId      String
+  creditAccountId     String
+  customerId          String?
+  linkedInvoiceId     String?
+  linkedConsignmentId String?
+
+  debitAccount      Account         @relation("DebitAccount", fields: [debitAccountId], references: [id])
+  creditAccount     Account         @relation("CreditAccount", fields: [creditAccountId], references: [id])
+  customer          Customer?       @relation(fields: [customerId], references: [id])
+  linkedInvoice     Invoice?        @relation(fields: [linkedInvoiceId], references: [id])
+  linkedConsignment ConsignmentNote? @relation(fields: [linkedConsignmentId], references: [id])
+
+  @@index([date])
+  @@index([customerId])
+}
+
+model CompanyProfile {
+  id             Int      @id @default(1)
+  firmName       String   @default("KINGS TRANSPORTS")
+  address        String?
+  gstin          String?
+  phone          String?
+  email          String?
+  invoicePrefix  String   @default("KT/25-26/INV")
+  lrPrefix       String   @default("KT/LR/25-26")
+  logoData       String?
+  updatedAt      DateTime @updatedAt
+}
+
+model TaxSetting {
+  id              Int      @id @default(1)
+  fc5CgstRate     Decimal  @default(2.5)
+  fc5SgstRate     Decimal  @default(2.5)
+  fc18CgstRate    Decimal  @default(9)
+  fc18SgstRate    Decimal  @default(9)
+  updatedAt       DateTime @updatedAt
+}
+
+model SequenceCounter {
+  id            String        @id @default(cuid())
+  sequenceType  String        @unique
+  prefix        String
+  currentNumber Int           @default(0)
+  updatedAt     DateTime      @updatedAt
+}
+
+model UserCredential {
+  id           Int      @id @default(autoincrement())
+  role         String   @unique
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
