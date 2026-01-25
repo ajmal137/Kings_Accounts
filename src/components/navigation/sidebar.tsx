@@ -51,12 +51,13 @@ const NAV_LINKS = [
   },
 ];
 
-type SidebarProps = {
+export type SidebarProps = {
   firmName: string;
   userRole: UserRole;
+  className?: string; // Added className prop
 };
 
-export function Sidebar({ firmName, userRole }: SidebarProps) {
+export function SidebarContent({ firmName, userRole, className }: SidebarProps) {
   const pathname = usePathname();
   const links =
     userRole === "ADMIN"
@@ -64,7 +65,7 @@ export function Sidebar({ firmName, userRole }: SidebarProps) {
       : NAV_LINKS.filter((link) => link.href !== "/settings");
 
   return (
-    <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-slate-200 bg-white/95 px-4 py-6 lg:flex lg:flex-col">
+    <div className={cn("flex h-full flex-col", className)}>
       <div className="mb-8">
         <p className="text-xs uppercase tracking-wide text-slate-400">
           KINGS TRANSPORTS
@@ -102,6 +103,14 @@ export function Sidebar({ firmName, userRole }: SidebarProps) {
           unless opted for FCM.
         </p>
       </div>
+    </div>
+  );
+}
+
+export function Sidebar({ firmName, userRole }: SidebarProps) {
+  return (
+    <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-slate-200 bg-white/95 px-4 py-6 lg:flex lg:flex-col">
+      <SidebarContent firmName={firmName} userRole={userRole} />
     </aside>
   );
 }

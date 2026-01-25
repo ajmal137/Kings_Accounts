@@ -3,6 +3,7 @@ import Link from "next/link";
 import { FilePlus2, NotebookPen } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 import type { UserRole } from "@/types/auth";
+import { MobileSidebar } from "./mobile-sidebar";
 
 type TopBarProps = {
   firmName: string;
@@ -25,6 +26,7 @@ export function TopBar({
     <header className="sticky top-0 z-20 flex flex-col gap-2 border-b border-slate-200 bg-white/90 px-4 py-4 backdrop-blur lg:px-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
+          <MobileSidebar firmName={firmName} userRole={role} />
           {logoSrc && (
             <div className="hidden h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white sm:flex">
               <Image
