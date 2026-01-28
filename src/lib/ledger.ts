@@ -15,31 +15,31 @@ export async function listLedgerEntries(params?: {
   const dateFilter =
     from || to
       ? {
-          date: {
-            ...(from ? { gte: from } : {}),
-            ...(to ? { lte: to } : {}),
-          },
-        }
+        date: {
+          ...(from ? { gte: from } : {}),
+          ...(to ? { lte: to } : {}),
+        },
+      }
       : undefined;
 
   return prisma.ledgerEntry.findMany({
     where: {
       ...(accountId
         ? {
-            OR: [
-              { debitAccountId: accountId },
-              { creditAccountId: accountId },
-            ],
-          }
+          OR: [
+            { debitAccountId: accountId },
+            { creditAccountId: accountId },
+          ],
+        }
         : {}),
       ...dateFilter,
       ...(customerId
         ? {
-            OR: [
-              { customerId },
-              { linkedInvoice: { customerId } },
-            ],
-          }
+          OR: [
+            { customerId },
+            { linkedInvoice: { customerId } },
+          ],
+        }
         : {}),
     },
     include: {
@@ -214,6 +214,85 @@ export async function getDebtorSubLedgerBalances() {
   return Array.from(balances.values()).sort((a, b) =>
     a.customer.name.localeCompare(b.customer.name)
   );
+}
+
+export async function getAccountLedgerDetails(
+  accountId: string,
+  from: Date,
+  to: Date,
+  customerId?: string
+) {
+  const account = await prisma.account.findUnique({
+    where: { id: accountId },
+  });
+
+  if (!account) throw new Error("Account not found");
+
+  const customerFilter = customerId
+    ? {
+      OR: [
+        { customerId },
+        { linkedInvoice: { customerId } },
+        { linkedConsignment: { customerId } },
+      ],
+    }
+    : {};
+
+  // Calculate Opening Balance (sum of all entries before 'from')
+  const previousEntries = await prisma.ledgerEntry.findMany({
+    where: {
+      OR: [{ debitAccountId: accountId }, { creditAccountId: accountId }],
+      date: { lt: from },
+      ...customerFilter,
+    },
+    select: {
+      amount: true,
+      debitAccountId: true,
+    },
+  });
+
+  let openingBalance = 0;
+  for (const entry of previousEntries) {
+    if (entry.debitAccountId === accountId) {
+      openingBalance += Number(entry.amount);
+    } else {
+      openingBalance -= Number(entry.amount);
+    }
+  }
+
+  // Fetch Range Entries
+  const entries = await prisma.ledgerEntry.findMany({
+    where: {
+      OR: [{ debitAccountId: accountId }, { creditAccountId: accountId }],
+      date: { gte: from, lte: to },
+      ...customerFilter,
+    },
+    include: {
+      debitAccount: true,
+      creditAccount: true,
+      linkedInvoice: true,
+      linkedConsignment: true,
+      customer: true,
+    },
+    orderBy: { date: "asc" },
+  });
+
+  // Calculate Closing Balance
+  let closingBalance = openingBalance;
+  for (const entry of entries) {
+    if (entry.debitAccountId === accountId) {
+      closingBalance += Number(entry.amount);
+    } else {
+      closingBalance -= Number(entry.amount);
+    }
+  }
+
+  return {
+    account,
+    openingBalance,
+    closingBalance,
+    entries,
+  };
 }
 
 

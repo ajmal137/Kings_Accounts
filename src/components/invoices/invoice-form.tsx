@@ -53,7 +53,7 @@ export function InvoiceForm({
       cgstRate: 0,
       sgstRate: 0,
       description: "",
-      placeOfSupply: "Maharashtra",
+      placeOfSupply: "Kerala",
     },
   });
 

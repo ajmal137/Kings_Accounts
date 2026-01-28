@@ -1,8 +1,8 @@
 "use client";
 
-import { useForm, type Resolver } from "react-hook-form";
+import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { consignmentSchema, ConsignmentFormValues } from "@/lib/validations";
 import {
@@ -25,6 +25,8 @@ export function ConsignmentForm({ customers, vehicles }: ConsignmentFormProps) {
   const {
     register,
     handleSubmit,
+    setValue, // Added setValue
+    control, // Added control
     formState: { errors },
   } = useForm<ConsignmentFormValues>({
     resolver: zodResolver(consignmentSchema) as Resolver<ConsignmentFormValues>,
@@ -38,6 +40,22 @@ export function ConsignmentForm({ customers, vehicles }: ConsignmentFormProps) {
       freightAmount: 0,
     },
   });
+
+  // Watch customerId to pre-fill consignor details
+  const customerId = useWatch({ control, name: "customerId" });
+
+  useEffect(() => {
+    if (customerId) {
+      const customer = customers.find((c) => c.id === customerId);
+      if (customer) {
+        setValue("consignorName", customer.name);
+        setValue("consignorAddress", customer.address);
+        if (customer.gstin) {
+          setValue("consignorGstin", customer.gstin);
+        }
+      }
+    }
+  }, [customerId, customers, setValue]);
 
   const onSubmit = handleSubmit((values) => {
     setError(null);

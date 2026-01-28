@@ -12,9 +12,21 @@ export const metadata: Metadata = {
   title: "Accounting | Kings Transport",
 };
 
-export default async function AccountingPage() {
+import { DateRangeFilter } from "@/components/accounting/date-range-filter";
+
+export default async function AccountingPage(props: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const searchParams = await props.searchParams;
+  const today = new Date().toISOString().split("T")[0];
+  const fromStr = (searchParams.from as string) ?? today;
+  const toStr = (searchParams.to as string) ?? today;
+
+  const from = new Date(fromStr);
+  const to = new Date(toStr);
+
   const [entries, accounts, customers] = await Promise.all([
-    listLedgerEntries({ limit: 30 }),
+    listLedgerEntries({ limit: 1000, from, to }), // Increased limit since we have filters
     getAllAccounts(),
     getCustomers(),
   ]);
@@ -33,6 +45,7 @@ export default async function AccountingPage() {
           Review postings generated from invoices or add manual journals.
         </p>
       </div>
+      <DateRangeFilter />
       <LedgerTable entries={entries} />
       <div className="grid gap-6 lg:grid-cols-2">
         <ManualJournalForm accounts={accounts} customers={customers} />
