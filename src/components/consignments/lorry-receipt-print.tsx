@@ -120,8 +120,10 @@ export async function LorryReceiptPrint({
 
       <footer className="mt-10 text-sm">
         <p>
-          <span className="font-semibold">GST Note:</span> GTA Service – GST
-          payable by recipient under RCM unless invoice issued under FCM option.
+          <span className="font-semibold">GST Note:</span>{" "}
+          {consignment.gstMode === "RCM"
+            ? (company.lrRcmDeclaration ?? "GTA Service – GST payable by recipient under RCM.")
+            : (company.lrFcmDeclaration ?? "GTA Service – GST payable by supplier under FCM.")}
         </p>
         <div className="mt-6 flex justify-between">
           <div>

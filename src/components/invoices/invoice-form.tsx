@@ -7,8 +7,10 @@ import { useTransition, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { InvoiceFormValues, invoiceSchema } from "@/lib/validations";
 import { INVOICE_TYPES } from "@/lib/options";
-import { createInvoice } from "@/app/(workspace)/invoices/actions";
+import { createInvoice, updateInvoice } from "@/app/(workspace)/invoices/actions";
 import { formatCurrency } from "@/lib/format";
+import { Invoice } from "@/generated/prisma";
+import { useRouter } from "next/navigation";
 
 type ConsignmentForForm = {
   id: string;
@@ -28,15 +30,23 @@ type InvoiceFormProps = {
   customers: Array<{ id: string; name: string }>;
   consignments: ConsignmentForForm[];
   taxSetting: TaxSettingForForm;
+  initialData?: Invoice;
+  adminPassword?: string;
+  invoicePrefix?: string;
 };
 
 export function InvoiceForm({
   customers,
   consignments,
   taxSetting,
+  initialData,
+  adminPassword,
+  invoicePrefix,
 }: InvoiceFormProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [isInitialRender, setIsInitialRender] = useState(true);
 
   const {
     register,
@@ -47,13 +57,20 @@ export function InvoiceForm({
   } = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceSchema) as Resolver<InvoiceFormValues>,
     defaultValues: {
-      date: new Date().toISOString().slice(0, 10),
-      invoiceType: "GTA_RCM",
-      basicAmount: 0,
-      cgstRate: 0,
-      sgstRate: 0,
-      description: "",
-      placeOfSupply: "Kerala",
+      date: initialData
+        ? new Date(initialData.date).toISOString().slice(0, 10)
+        : new Date().toISOString().slice(0, 10),
+      invoiceType: (initialData?.invoiceType as any) ?? "GTA_RCM",
+      basicAmount: initialData ? Number(initialData.basicAmount) : 0,
+      cgstRate: initialData ? Number(initialData.cgstRate) : 0,
+      sgstRate: initialData ? Number(initialData.sgstRate) : 0,
+      description:
+        initialData?.description ??
+        "Road transport services of goods (HSN: 996511)",
+      placeOfSupply: initialData?.placeOfSupply ?? "Kerala",
+      customerId: initialData?.customerId ?? "",
+      consignmentNoteId: initialData?.consignmentNoteId ?? "",
+      notes: initialData?.notes ?? "",
     },
   });
 
@@ -68,6 +85,10 @@ export function InvoiceForm({
   const sgstRate = Number(useWatch({ control, name: "sgstRate" }) || 0);
 
   useEffect(() => {
+    if (isInitialRender) {
+      setIsInitialRender(false);
+      return;
+    }
     if (invoiceType === "GTA_RCM") {
       setValue("cgstRate", 0);
       setValue("sgstRate", 0);
@@ -78,7 +99,7 @@ export function InvoiceForm({
       setValue("cgstRate", Number(taxSetting.fc18CgstRate));
       setValue("sgstRate", Number(taxSetting.fc18SgstRate));
     }
-  }, [invoiceType, setValue, taxSetting]);
+  }, [invoiceType, setValue, taxSetting, isInitialRender]);
 
   const cgstAmount = (basicAmount * cgstRate) / 100;
   const sgstAmount = (basicAmount * sgstRate) / 100;
@@ -88,10 +109,28 @@ export function InvoiceForm({
     setError(null);
     startTransition(async () => {
       try {
-        await createInvoice(values);
+        if (initialData) {
+          if (!adminPassword) {
+            setError("Admin password is required to save edits.");
+            return;
+          }
+          const result = await updateInvoice({
+            id: initialData.id,
+            adminPassword,
+            ...values,
+          });
+          if (result.success) {
+            router.push(`/invoices/${initialData.id}`);
+            router.refresh();
+          } else {
+            setError(result.message ?? "Failed to update invoice.");
+          }
+        } else {
+          await createInvoice(values);
+        }
       } catch (err) {
         console.error(err);
-        setError("Failed to create invoice. Please try again.");
+        setError("An unexpected error occurred. Please try again.");
       }
     });
   });
@@ -99,9 +138,18 @@ export function InvoiceForm({
   return (
     <form className="space-y-6" onSubmit={onSubmit}>
       <section className="card space-y-4 p-6">
-        <h3 className="text-lg font-semibold text-slate-900">
-          Customer & Consignment
-        </h3>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-slate-100 pb-3 gap-2">
+          <h3 className="text-lg font-semibold text-slate-900">
+            Customer & Consignment
+          </h3>
+          <div className="text-xs font-semibold bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-lg text-blue-700 font-mono">
+            {initialData ? (
+              <span>Invoice No: {initialData.invoiceNumber}</span>
+            ) : (
+              <span className="text-slate-500 italic">No: {invoicePrefix ? `${invoicePrefix}-XXXX` : "Auto-generated"}</span>
+            )}
+          </div>
+        </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">
@@ -297,7 +345,7 @@ export function InvoiceForm({
           className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
         >
           {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-          Create Invoice
+          {initialData ? "Update Invoice" : "Create Invoice"}
         </button>
       </div>
     </form>

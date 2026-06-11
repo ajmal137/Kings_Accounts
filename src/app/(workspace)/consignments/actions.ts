@@ -145,4 +145,87 @@ export async function deleteConsignment(data: unknown) {
   return { success: true };
 }
 
+const updateConsignmentSchema = consignmentSchema.extend({
+  id: z.string().min(1, "Consignment id is required."),
+  adminPassword: z.string().min(6, "Admin password is required."),
+});
+
+export async function updateConsignment(rawData: unknown) {
+  const parsed = updateConsignmentSchema.safeParse(rawData);
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      errors: parsed.error.flatten().fieldErrors,
+      message: "Invalid input values.",
+    };
+  }
+
+  const { id, adminPassword, ...data } = parsed.data;
+
+  // Verify admin password
+  const admin = await prisma.userCredential.findUnique({
+    where: { role: "ADMIN" },
+  });
+
+  if (!admin) {
+    return {
+      success: false,
+      message: "Admin credentials are not configured.",
+    };
+  }
+
+  const isValidPassword = await compare(adminPassword, admin.passwordHash);
+  if (!isValidPassword) {
+    return {
+      success: false,
+      message: "Incorrect admin password.",
+    };
+  }
+
+  try {
+    const consignment = await prisma.consignmentNote.update({
+      where: { id },
+      data: {
+        date: new Date(data.date),
+        consignorName: data.consignorName,
+        consignorAddress: data.consignorAddress,
+        consignorGstin: data.consignorGstin ?? null,
+        consigneeName: data.consigneeName,
+        consigneeAddress: data.consigneeAddress,
+        consigneeGstin: data.consigneeGstin ?? null,
+        customerId: data.customerId,
+        vehicleId: data.vehicleId,
+        fromLocation: data.fromLocation,
+        toLocation: data.toLocation,
+        goodsDescription: data.goodsDescription,
+        numPackages: data.numPackages,
+        weight: data.weight,
+        freightAmount: data.freightAmount,
+        paymentType: data.paymentType,
+        gstMode: data.gstMode,
+        ownerRiskOrCarrierRisk: data.ownerRiskOrCarrierRisk,
+        ewayBillNumber: data.ewayBillNumber ?? null,
+        remarks: data.remarks ?? null,
+      },
+    });
+
+    revalidatePath("/dashboard");
+    revalidatePath("/consignments");
+    revalidatePath(`/consignments/${id}`);
+
+    return {
+      success: true,
+      consignmentId: consignment.id,
+    };
+  } catch (error: any) {
+    console.error("Failed to update consignment:", error);
+    return {
+      success: false,
+      message: `Failed to update consignment: ${error instanceof Error ? error.message : "Unknown error"}`,
+    };
+  }
+}
+
+
 

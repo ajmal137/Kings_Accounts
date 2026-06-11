@@ -149,6 +149,10 @@ model CompanyProfile {
   invoicePrefix  String   @default("KT/25-26/INV")
   lrPrefix       String   @default("KT/LR/25-26")
   logoData       String?
+  invoiceRcmDeclaration String @default("GST payable by recipient under reverse charge mechanism as per GTA notification.")
+  invoiceFcmDeclaration String @default("Input tax credit available subject to GST rules.")
+  lrRcmDeclaration      String @default("GTA Service – GST payable by recipient under RCM unless invoice issued under FCM option.")
+  lrFcmDeclaration      String @default("GTA Service – GST payable by supplier under FCM.")
   updatedAt      DateTime @updatedAt
 }
 

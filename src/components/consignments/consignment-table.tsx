@@ -2,6 +2,8 @@ import { ConsignmentNote, Customer, Vehicle } from "@/generated/prisma";
 import Link from "next/link";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { DeleteConsignmentButton } from "./delete-consignment-button";
+import { EditConsignmentButton } from "./edit-consignment-button";
+
 
 type ConsignmentTableProps = {
   consignments: Array<
@@ -57,7 +59,10 @@ export function ConsignmentTable({ consignments }: ConsignmentTableProps) {
                 {formatCurrency(Number(consignment.freightAmount))}
               </td>
               <td className="px-4 py-3 text-right">
-                <DeleteConsignmentButton consignmentId={consignment.id} />
+                <div className="flex justify-end gap-2 items-start">
+                  <EditConsignmentButton consignmentId={consignment.id} />
+                  <DeleteConsignmentButton consignmentId={consignment.id} />
+                </div>
               </td>
             </tr>
           ))}

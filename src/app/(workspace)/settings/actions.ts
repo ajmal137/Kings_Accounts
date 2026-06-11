@@ -14,6 +14,10 @@ const companySchema = z.object({
   email: z.string().email().optional().nullable(),
   invoicePrefix: z.string().min(2),
   lrPrefix: z.string().min(2),
+  invoiceRcmDeclaration: z.string().min(3),
+  invoiceFcmDeclaration: z.string().min(3),
+  lrRcmDeclaration: z.string().min(3),
+  lrFcmDeclaration: z.string().min(3),
 });
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
@@ -63,6 +67,10 @@ export async function updateCompanyProfile(formData: FormData) {
     email: optionalString("email"),
     invoicePrefix: requiredString("invoicePrefix"),
     lrPrefix: requiredString("lrPrefix"),
+    invoiceRcmDeclaration: requiredString("invoiceRcmDeclaration"),
+    invoiceFcmDeclaration: requiredString("invoiceFcmDeclaration"),
+    lrRcmDeclaration: requiredString("lrRcmDeclaration"),
+    lrFcmDeclaration: requiredString("lrFcmDeclaration"),
   };
 
   const parsed = companySchema.safeParse(payload);

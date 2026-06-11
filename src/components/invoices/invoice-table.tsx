@@ -2,6 +2,8 @@ import { Customer, Invoice, ConsignmentNote } from "@/generated/prisma";
 import Link from "next/link";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { DeleteInvoiceButton } from "./delete-invoice-button";
+import { EditInvoiceButton } from "./edit-invoice-button";
+
 
 type InvoiceTableProps = {
   invoices: Array<
@@ -60,7 +62,10 @@ export function InvoiceTable({ invoices }: InvoiceTableProps) {
                 {formatCurrency(Number(invoice.totalAmount))}
               </td>
               <td className="px-4 py-3 text-right">
-                <DeleteInvoiceButton invoiceId={invoice.id} />
+                <div className="flex justify-end gap-2 items-start">
+                  <EditInvoiceButton invoiceId={invoice.id} />
+                  <DeleteInvoiceButton invoiceId={invoice.id} />
+                </div>
               </td>
             </tr>
           ))}

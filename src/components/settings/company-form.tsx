@@ -173,6 +173,62 @@ export function CompanyForm({ profile }: CompanyFormProps) {
           className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
         />
       </div>
+      <div className="border-t border-slate-100 pt-4 space-y-4">
+        <div>
+          <h4 className="font-semibold text-slate-900 text-sm">GST Declarations</h4>
+          <p className="text-xs text-slate-500">Customize the RCM and FCM terms printed on invoices and Lorry Receipts.</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">
+              Invoice RCM Declaration
+            </label>
+            <textarea
+              name="invoiceRcmDeclaration"
+              rows={2}
+              defaultValue={profile.invoiceRcmDeclaration}
+              className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">
+              Invoice FCM Declaration
+            </label>
+            <textarea
+              name="invoiceFcmDeclaration"
+              rows={2}
+              defaultValue={profile.invoiceFcmDeclaration}
+              className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">
+              LR RCM Declaration
+            </label>
+            <textarea
+              name="lrRcmDeclaration"
+              rows={2}
+              defaultValue={profile.lrRcmDeclaration}
+              className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">
+              LR FCM Declaration
+            </label>
+            <textarea
+              name="lrFcmDeclaration"
+              rows={2}
+              defaultValue={profile.lrFcmDeclaration}
+              className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+              required
+            />
+          </div>
+        </div>
+      </div>
       <div className="space-y-3">
         <label className="text-sm font-medium text-slate-700">
           Company Logo

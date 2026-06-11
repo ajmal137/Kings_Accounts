@@ -7,6 +7,8 @@ import {
   createSession,
   destroySession,
 } from "@/lib/auth";
+import { compare } from "bcryptjs";
+import { prisma } from "@/lib/prisma";
 
 export type LoginFormState = {
   error?: string;
@@ -38,4 +40,25 @@ export async function logoutAction() {
   await destroySession();
   redirect("/login");
 }
+
+export async function verifyAdminPasswordAction(password: string): Promise<{ success: boolean; message?: string }> {
+  if (!password) {
+    return { success: false, message: "Password is required." };
+  }
+
+  const admin = await prisma.userCredential.findUnique({
+    where: { role: "ADMIN" },
+  });
+
+  if (!admin) {
+    return { success: false, message: "Admin credentials are not configured." };
+  }
+
+  const isValid = await compare(password, admin.passwordHash);
+  return {
+    success: isValid,
+    message: isValid ? undefined : "Incorrect admin password.",
+  };
+}
+
 

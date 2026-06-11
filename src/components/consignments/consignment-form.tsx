@@ -10,34 +10,59 @@ import {
   PAYMENT_TYPES,
   RISK_TYPES,
 } from "@/lib/options";
-import { createConsignment } from "@/app/(workspace)/consignments/actions";
-import { Customer, Vehicle } from "@/generated/prisma";
+import { createConsignment, updateConsignment } from "@/app/(workspace)/consignments/actions";
+import { Customer, Vehicle, ConsignmentNote } from "@/generated/prisma";
+import { useRouter } from "next/navigation";
 
 type ConsignmentFormProps = {
   customers: Customer[];
   vehicles: Vehicle[];
+  initialData?: ConsignmentNote;
+  adminPassword?: string;
 };
 
-export function ConsignmentForm({ customers, vehicles }: ConsignmentFormProps) {
+export function ConsignmentForm({
+  customers,
+  vehicles,
+  initialData,
+  adminPassword,
+}: ConsignmentFormProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
-    setValue, // Added setValue
-    control, // Added control
+    setValue,
+    control,
     formState: { errors },
   } = useForm<ConsignmentFormValues>({
     resolver: zodResolver(consignmentSchema) as Resolver<ConsignmentFormValues>,
     defaultValues: {
-      date: new Date().toISOString().slice(0, 10),
-      paymentType: "PAID",
-      gstMode: "RCM",
-      ownerRiskOrCarrierRisk: "CARRIER_RISK",
-      numPackages: 1,
-      weight: 1,
-      freightAmount: 0,
+      date: initialData
+        ? new Date(initialData.date).toISOString().slice(0, 10)
+        : new Date().toISOString().slice(0, 10),
+      customerId: initialData?.customerId ?? "",
+      vehicleId: initialData?.vehicleId ?? "",
+      consignorName: initialData?.consignorName ?? "",
+      consignorAddress: initialData?.consignorAddress ?? "",
+      consignorGstin: initialData?.consignorGstin ?? "",
+      consigneeName: initialData?.consigneeName ?? "",
+      consigneeAddress: initialData?.consigneeAddress ?? "",
+      consigneeGstin: initialData?.consigneeGstin ?? "",
+      fromLocation: initialData?.fromLocation ?? "",
+      toLocation: initialData?.toLocation ?? "",
+      goodsDescription: initialData?.goodsDescription ?? "",
+      numPackages: initialData?.numPackages ?? 1,
+      weight: initialData ? Number(initialData.weight) : 1,
+      freightAmount: initialData ? Number(initialData.freightAmount) : 0,
+      paymentType: (initialData?.paymentType as any) ?? "PAID",
+      gstMode: (initialData?.gstMode as any) ?? "RCM",
+      ownerRiskOrCarrierRisk:
+        (initialData?.ownerRiskOrCarrierRisk as any) ?? "CARRIER_RISK",
+      ewayBillNumber: initialData?.ewayBillNumber ?? "",
+      remarks: initialData?.remarks ?? "",
     },
   });
 
@@ -45,7 +70,7 @@ export function ConsignmentForm({ customers, vehicles }: ConsignmentFormProps) {
   const customerId = useWatch({ control, name: "customerId" });
 
   useEffect(() => {
-    if (customerId) {
+    if (customerId && (!initialData || customerId !== initialData.customerId)) {
       const customer = customers.find((c) => c.id === customerId);
       if (customer) {
         setValue("consignorName", customer.name);
@@ -55,16 +80,34 @@ export function ConsignmentForm({ customers, vehicles }: ConsignmentFormProps) {
         }
       }
     }
-  }, [customerId, customers, setValue]);
+  }, [customerId, customers, setValue, initialData]);
 
   const onSubmit = handleSubmit((values) => {
     setError(null);
     startTransition(async () => {
       try {
-        await createConsignment(values);
+        if (initialData) {
+          if (!adminPassword) {
+            setError("Admin password is required to save edits.");
+            return;
+          }
+          const result = await updateConsignment({
+            id: initialData.id,
+            adminPassword,
+            ...values,
+          });
+          if (result.success) {
+            router.push(`/consignments/${initialData.id}`);
+            router.refresh();
+          } else {
+            setError(result.message ?? "Failed to update consignment.");
+          }
+        } else {
+          await createConsignment(values);
+        }
       } catch (err) {
         console.error(err);
-        setError("Failed to create consignment. Please try again.");
+        setError("An unexpected error occurred. Please try again.");
       }
     });
   });
@@ -353,7 +396,7 @@ export function ConsignmentForm({ customers, vehicles }: ConsignmentFormProps) {
           className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
         >
           {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-          Save Consignment
+          {initialData ? "Update Consignment" : "Save Consignment"}
         </button>
       </div>
     </form>

@@ -3,6 +3,7 @@ import { InvoiceForm } from "@/components/invoices/invoice-form";
 import { getCustomers } from "@/lib/masters";
 import { prisma } from "@/lib/prisma";
 import { getTaxSetting } from "@/lib/tax";
+import { getCompanyProfile } from "@/lib/company";
 import type { ConsignmentNote, TaxSetting } from "@/generated/prisma";
 
 type ConsignmentForForm = Omit<ConsignmentNote, "weight" | "freightAmount"> & {
@@ -22,13 +23,14 @@ export const metadata: Metadata = {
 };
 
 export default async function NewInvoicePage() {
-  const [customers, consignments, taxSetting] = await Promise.all([
+  const [customers, consignments, taxSetting, company] = await Promise.all([
     getCustomers(),
     prisma.consignmentNote.findMany({
       orderBy: { date: "desc" },
       take: 50,
     }),
     getTaxSetting(),
+    getCompanyProfile(),
   ]);
 
   const safeConsignments: ConsignmentForForm[] = consignments.map((c) => ({
@@ -59,6 +61,7 @@ export default async function NewInvoicePage() {
         customers={customers}
         consignments={safeConsignments}
         taxSetting={safeTaxSetting}
+        invoicePrefix={company.invoicePrefix}
       />
     </div>
   );

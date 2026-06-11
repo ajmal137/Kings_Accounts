@@ -64,7 +64,19 @@ export async function InvoicePrint({ invoice }: InvoicePrintProps) {
             <span className="font-semibold">Billed To:</span>{" "}
             {invoice.customer?.name ?? "Customer"}
           </p>
-          <p>GST Payable By: {invoice.gstPayableBy.replace("_", " ")}</p>
+          {invoice.customer?.address && (
+            <p className="whitespace-pre-line text-xs text-slate-600 mt-1">
+              {invoice.customer.address}
+            </p>
+          )}
+          {invoice.customer?.gstin && (
+            <p className="text-xs text-slate-600">
+              GSTIN: {invoice.customer.gstin}
+            </p>
+          )}
+          <p className="text-xs text-slate-600 mt-1">
+            GST Payable By: {invoice.gstPayableBy.replace("_", " ")}
+          </p>
         </div>
       </section>
 
@@ -113,17 +125,34 @@ export async function InvoicePrint({ invoice }: InvoicePrintProps) {
         </table>
       </section>
 
+      {invoice.consignmentNote && (
+        <section className="mt-6 border border-slate-200 p-4">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-600 mb-2">
+            Lorry Receipt / Consignment Note Details
+          </h3>
+          <div className="grid grid-cols-2 gap-4 text-xs text-slate-700">
+            <div className="space-y-1">
+              <p><span className="font-semibold">LR Number:</span> {invoice.consignmentNote.lrNumber}</p>
+              <p><span className="font-semibold">LR Date:</span> {formatDate(invoice.consignmentNote.date)}</p>
+              <p><span className="font-semibold">Vehicle Number:</span> {invoice.consignmentNote.vehicle?.vehicleNumber ?? "—"}</p>
+              <p><span className="font-semibold">Goods Description:</span> {invoice.consignmentNote.goodsDescription}</p>
+            </div>
+            <div className="space-y-1">
+              <p><span className="font-semibold">From Location:</span> {invoice.consignmentNote.fromLocation}</p>
+              <p><span className="font-semibold">To Location:</span> {invoice.consignmentNote.toLocation}</p>
+              <p><span className="font-semibold">Packages:</span> {invoice.consignmentNote.numPackages}</p>
+              <p><span className="font-semibold">Weight:</span> {Number(invoice.consignmentNote.weight)} MT</p>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="mt-6 text-sm">
-        {invoice.invoiceType === "GTA_RCM" ? (
-          <p>
-            GST payable by recipient under reverse charge mechanism as per GTA
-            notification.
-          </p>
-        ) : invoice.invoiceType === "GTA_FCM_5" ? (
-          <p>No ITC available to supplier under 5% FCM option.</p>
-        ) : (
-          <p>Input tax credit available subject to GST rules.</p>
-        )}
+        <p>
+          {invoice.invoiceType === "GTA_RCM"
+            ? (company.invoiceRcmDeclaration ?? "GST payable by recipient under reverse charge mechanism as per GTA notification.")
+            : (company.invoiceFcmDeclaration ?? "Input tax credit available subject to GST rules.")}
+        </p>
         <p className="mt-2">{invoice.notes ?? ""}</p>
       </section>
 
