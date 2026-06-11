@@ -1,4 +1,4 @@
-import { Customer, Invoice, ConsignmentNote } from "@/generated/prisma";
+import { Customer, Invoice, ConsignmentNote, Vehicle } from "@/generated/prisma";
 import { getCompanyProfile, toLogoSrc } from "@/lib/company";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { PrintButton } from "@/components/common/print-button";
@@ -6,7 +6,7 @@ import { PrintButton } from "@/components/common/print-button";
 type InvoicePrintProps = {
   invoice: Invoice & {
     customer: Customer | null;
-    consignmentNote?: ConsignmentNote | null;
+    consignmentNote?: (ConsignmentNote & { vehicle: Vehicle | null }) | null;
   };
 };
 
